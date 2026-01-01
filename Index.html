@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RESILIENCIA - Resort Inmersivo Sensorial | Pack Técnico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jura:wght@300;400;600&family=Roboto+Mono:wght@300;400&display=swap');
+        
+        body { font-family: 'Roboto Mono', monospace; background-color: #1a202c; color: #e2e8f0; }
+        h1, h2, h3 { font-family: 'Jura', sans-serif; text-transform: uppercase; }
+        
+        .blueprint-grid {
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: #0f172a;
+        }
+
+
+        @media print {
+            @page { size: A1 landscape; margin: 10mm; }
+            body { background-color: white; color: black; }
+            .blueprint-grid { background-color: white; background-image: none; border: 2px solid black; }
+            .no-print { display: none !important; }
+            .print-black { stroke: black !important; fill: none !important; }
+            .text-print-black { color: black !important; }
+            .bg-slate-800 { background-color: white !important; border: 1px solid #ccc; }
+            button { display: none; }
+        }
+
+        .editable:focus { outline: 2px solid #3b82f6; background: rgba(59,130,246,0.1); }
+        .editable { border-bottom: 1px dashed #64748b; min-width: 50px; display: inline-block; cursor: text; }
+
+     
+        .svg-layer { transition: opacity 0.3s ease; }
+        .structure-line { stroke: #94a3b8; stroke-width: 1; fill: none; }
+        .dimension-line { stroke: #f472b6; stroke-width: 0.5; stroke-dasharray: 4; }
+        .mep-elec { stroke: #fbbf24; stroke-width: 1.5; opacity: 0.8; }
+        .mep-hvac { stroke: #60a5fa; stroke-width: 1.5; opacity: 0.8; }
+        .mep-plum { stroke: #10b981; stroke-width: 1.5; opacity: 0.8; }
+        .safety-route { stroke: #ef4444; stroke-width: 2; stroke-dasharray: 8; opacity: 0.8; }
+        
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+        
+  
+        .detail-text { font-family: monospace; font-size: 4px; fill: #94a3b8; }
+        .detail-dim { font-family: monospace; font-size: 3px; fill: #f472b6; }
+        .hatch-concrete { fill: url(#hatchConcrete); }
+        .hatch-earth { fill: url(#hatchEarth); }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+
+    <header class="bg-slate-900 border-b border-slate-700 p-4 flex justify-between items-center no-print z-50">
+        <div>
+            <h1 class="text-2xl font-bold tracking-widest text-blue-400">RESILIENCIA</h1>
+            <p class="text-xs text-slate-400">RESORT INMERSIVO SENSORIAL - FASE: PROYECTO BÁSICO</p>
+        </div>
+        <div class="flex gap-4">
+            <button onclick="window.print()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-sm transition">
+                <i data-lucide="printer"></i> Imprimir Todo (PDF)
+            </button>
+            <button onclick="downloadActiveView()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm transition shadow-lg shadow-blue-500/20">
+                <i data-lucide="download"></i> Descargar Plano Actual (.SVG)
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+
+        <aside class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col no-print overflow-y-auto">
+            <nav class="p-4 space-y-2">
+                <button onclick="switchTab('masterplan')" id="btn-masterplan" class="w-full text-left p-3 rounded hover:bg-slate-700 tab-active transition flex items-center gap-2">
+                    <i data-lucide="map"></i> 01. Masterplan & Site
+                </button>
+                <button onclick="switchTab('units')" id="btn-units" class="w-full text-left p-3 rounded hover:bg-slate-700 transition flex items-center gap-2">
+                    <i data-lucide="box"></i> 02. Módulos & Arq.
+                </button>
+                <button onclick="switchTab('details')" id="btn-details" class="w-full text-left p-3 rounded hover:bg-slate-700 transition flex items-center gap-2">
+                    <i data-lucide="hammer"></i> 03. Detalles Const.
+                </button>
+                <button onclick="switchTab('mep')" id="btn-mep" class="w-full text-left p-3 rounded hover:bg-slate-700 transition flex items-center gap-2">
+                    <i data-lucide="zap"></i> 04. MEP & Diagramas
+                </button>
+                <button onclick="switchTab('specs')" id="btn-specs" class="w-full text-left p-3 rounded hover:bg-slate-700 transition flex items-center gap-2">
+                    <i data-lucide="file-text"></i> 05. Memoria & BOQ
+                </button>
+            </nav>
+
+           
+            <div id="layer-controls" class="p-4 border-t border-slate-700 mt-auto">
+                <h3 class="text-xs text-slate-400 mb-2 uppercase">Capas (Visualización)</h3>
+                <label class="flex items-center gap-2 text-sm mb-1 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleLayer('layer-arch')" class="accent-blue-500"> Arquitectura
+                </label>
+                <label class="flex items-center gap-2 text-sm mb-1 cursor-pointer text-yellow-400">
+                    <input type="checkbox" onchange="toggleLayer('layer-elec')" class="accent-yellow-500"> Electricidad (Red)
+                </label>
+                <label class="flex items-center gap-2 text-sm mb-1 cursor-pointer text-green-400">
+                    <input type="checkbox" onchange="toggleLayer('layer-land')" class="accent-green-500"> Paisajismo
+                </label>
+                <label class="flex items-center gap-2 text-sm mb-1 cursor-pointer text-red-400">
+                    <input type="checkbox" onchange="toggleLayer('layer-fire')" class="accent-red-500"> Seguridad/Evac
+                </label>
+            </div>
+        </aside>
+
+   
+        <main class="flex-1 relative overflow-hidden bg-slate-900">
+            
+       
+            <div class="absolute bottom-4 right-4 bg-slate-800 border border-slate-600 p-4 w-96 z-40 text-xs shadow-2xl opacity-90 pointer-events-auto">
+                <div class="grid grid-cols-2 gap-2 border-b border-slate-600 pb-2 mb-2">
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase">Proyecto</span>
+                        <span class="font-bold">RESILIENCIA</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase">Ubicación (Coords)</span>
+                        <span class="editable" contenteditable="true">18.48N, 69.95W (Ref)</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase">Normativa / Código</span>
+                        <span class="editable" contenteditable="true">IBC 2021 / Local</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase">Fecha / Rev</span>
+                        <span class="editable" contenteditable="true">31-12-2025 / Rev. B</span>
+                    </div>
+                </div>
+                <div class="mt-2 pt-2 border-t border-slate-600">
+                    <span class="block text-slate-500 text-[10px] uppercase">Nota Legal</span>
+                    <p class="text-[9px] text-slate-400 text-justify">
+                        Planos conceptuales para fase de proyecto básico. Deben adaptarse a normativa local y ser visados por técnicos competentes.
+                    </p>
+                </div>
+            </div>
+
+           
+            <section id="view-masterplan" class="w-full h-full relative blueprint-grid overflow-auto cursor-grab active:cursor-grabbing p-10">
+              
+                <svg viewBox="0 0 1000 800" class="w-full h-full transform transition-transform duration-300" id="svg-masterplan" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+                        </pattern>
+                       
+                        <g id="tree">
+                            <circle cx="0" cy="0" r="4" fill="#15803d" opacity="0.6" />
+                            <circle cx="1" cy="-1" r="2" fill="#22c55e" opacity="0.7" />
+                        </g>
+                        <g id="suite-container">
+                            <rect x="0" y="0" width="24" height="6" fill="#1e293b" stroke="#94a3b8" stroke-width="0.5" />
+                            <line x1="12" y1="0" x2="12" y2="6" stroke="#94a3b8" stroke-dasharray="1 1" /> <!-- Division 20ft if needed -->
+                        </g>
+                    </defs>
+
+              
+                    <rect width="1000" height="800" fill="url(#grid)" />
+                    
+                  
+                    <g id="layer-land" class="svg-layer">
+                        <path d="M0 650 Q 250 620, 500 660 T 1000 640 V 800 H 0 Z" fill="#0f172a" stroke="#334155" /> <!-- Ocean -->
+                        <text x="50" y="750" fill="#334155" font-size="20" letter-spacing="5">MAR / OCÉANO</text>
+                        
+                 
+                        <path d="M 50 50 H 950 V 600 H 50 Z" fill="none" stroke="#166534" stroke-width="0.5" stroke-dasharray="5 5" />
+                        
+                    
+                        <use href="#tree" x="100" y="100" /> <use href="#tree" x="150" y="120" />
+                        <use href="#tree" x="800" y="200" /> <use href="#tree" x="850" y="400" />
+                        <use href="#tree" x="300" y="550" /> <use href="#tree" x="400" y="560" />
+                    </g>
+
+                 
+                    <g id="layer-arch" class="svg-layer">
+                        
+                        <g transform="translate(500, 200)">
+                            <ellipse cx="0" cy="0" rx="80" ry="50" fill="#1e293b" stroke="#cbd5e1" stroke-width="2" />
+                            <text x="-40" y="5" fill="white" font-size="8" font-family="sans-serif">RECEPCIÓN (CAPARAZÓN)</text>
+                       
+                            <rect x="-30" y="-30" width="60" height="10" fill="#3b82f6" opacity="0.4" />
+                            <rect x="-30" y="-15" width="60" height="10" fill="#3b82f6" opacity="0.4" />
+                        </g>
+
+                      
+                        <path d="M 500 280 C 400 300, 400 400, 500 420 C 600 400, 600 300, 500 280" fill="none" stroke="#0ea5e9" stroke-width="15" opacity="0.5" />
+                        <text x="470" y="350" fill="#0ea5e9" font-size="10">LAZY RIVER / BIO-PISCINA</text>
+
+                    
+                        <g transform="translate(200, 400) rotate(10)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-01</text></g>
+                        <g transform="translate(300, 420) rotate(5)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-02</text></g>
+                        <g transform="translate(400, 430) rotate(0)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-03</text></g>
+                        <g transform="translate(600, 430) rotate(0)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-04</text></g>
+                        <g transform="translate(700, 420) rotate(-5)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-05</text></g>
+                        <g transform="translate(800, 400) rotate(-10)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-06</text></g>
+
+                     
+                        <g transform="translate(150, 300) rotate(15)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-07</text></g>
+                        <g transform="translate(250, 320) rotate(10)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-08</text></g>
+                        <g transform="translate(850, 300) rotate(-15)"><use href="#suite-container" /><text x="0" y="-5" fill="#94a3b8" font-size="4">S-12</text></g>
+
+                   
+                        <rect x="50" y="50" width="100" height="150" stroke="#64748b" fill="none" />
+                        <text x="60" y="100" fill="#64748b" font-size="10" transform="rotate(-90 60 100)">PARKING</text>
+                    </g>
+
+                
+                    <g id="layer-elec" class="svg-layer" style="display:none;">
+                  
+                        <path d="M 500 200 L 200 400" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2 2" />
+                        <path d="M 500 200 L 300 420" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2 2" />
+                        <path d="M 500 200 L 400 430" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2 2" />
+                        <path d="M 500 200 L 600 430" stroke="#fbbf24" stroke-width="1" stroke-dasharray="2 2" />
+                    
+                        <circle cx="500" cy="200" r="10" fill="#fbbf24" opacity="0.5" />
+                        <text x="515" y="195" fill="#fbbf24" font-size="8">HUB SOLAR</text>
+                    </g>
+
+           
+                    <g id="layer-fire" class="svg-layer" style="display:none;">
+                     
+                        <path d="M 200 400 L 200 600" class="safety-route" marker-end="url(#arrow)" />
+                        <path d="M 800 400 L 800 600" class="safety-route" marker-end="url(#arrow)" />
+                   
+                        <circle cx="500" cy="550" r="20" stroke="#ef4444" fill="none" stroke-width="2" />
+                        <text x="480" y="555" fill="#ef4444" font-size="8" font-weight="bold">PUNTO REUNIÓN</text>
+                    </g>
+                </svg>
+            </section>
+
+        
+            <section id="view-units" class="hidden w-full h-full p-8 overflow-y-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                   
+                    <div class="bg-slate-800 p-6 rounded border border-slate-700">
+                        <h2 class="text-xl text-blue-400 mb-4 border-b border-slate-600 pb-2">01. Unidad Clásica (1x 40' HC)</h2>
+                        <div class="h-64 bg-slate-900 mb-4 relative blueprint-grid border border-slate-600">
+                       
+                            <svg viewBox="0 0 120 40" class="w-full h-full p-4" id="svg-unit-1" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="5" y="5" width="110" height="23" fill="none" stroke="white" stroke-width="1" />
+                          
+                                <line x1="30" y1="5" x2="30" y2="28" stroke="white" stroke-width="0.5" /> <!-- Bath -->
+                                <line x1="80" y1="5" x2="80" y2="28" stroke="white" stroke-width="0.5" /> <!-- Bed -->
+                             
+                                <text x="10" y="18" fill="white" font-size="3">BAÑO</text>
+                                <text x="50" y="18" fill="white" font-size="3">ESTAR / KITCHENETTE</text>
+                                <text x="90" y="18" fill="white" font-size="3">DORMITORIO</text>
+                              
+                                <text x="60" y="35" fill="#f472b6" font-size="3">12.03m (Largo Ext)</text>
+                            </svg>
+                        </div>
+                        <ul class="text-sm text-slate-300 list-disc pl-5 space-y-1">
+                            <li>Área Interior: 28.2 m²</li>
+                            <li>Terraza Deck: 15 m² (Madera tratada/WPC)</li>
+                            <li>Aislamiento: Proyección PUR 50mm + Lana roca</li>
+                        </ul>
+                    </div>
+                  
+                     <div class="bg-slate-800 p-6 rounded border border-slate-700">
+                        <h2 class="text-xl text-yellow-400 mb-4 border-b border-slate-600 pb-2">02. Unidad Premium (2x 40' HC + Roof)</h2>
+                        <div class="h-64 bg-slate-900 mb-4 relative blueprint-grid border border-slate-600 flex items-center justify-center">
+                          
+                             <svg viewBox="0 0 120 60" class="w-full h-full p-4" id="svg-unit-2" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="5" y="5" width="110" height="23" fill="none" stroke="white" stroke-width="1" />
+                                <rect x="5" y="30" width="60" height="23" fill="none" stroke="white" stroke-width="1" />
+                            
+                                <line x1="65" y1="28" x2="65" y2="30" stroke="white" stroke-width="0.5" />
+                            
+                                <text x="50" y="18" fill="white" font-size="3">SALA ESTAR PRINCIPAL</text>
+                                <text x="20" y="42" fill="white" font-size="3">DORMITORIO 2</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            
+             <section id="view-specs" class="hidden w-full h-full p-10 overflow-y-auto max-w-4xl mx-auto">
+                <article class="prose prose-invert prose-blue max-w-none">
+                    <h1>Memoria Técnica Descriptiva</h1>
+                    <p class="text-xs uppercase tracking-widest text-slate-500 mb-8">Ref: DOC-MEM-001 | Autor: IA Architecture | Estado: Preliminar</p>
+
+                    <h3>1. Objeto del Proyecto</h3>
+                    <p>
+                        El presente documento tiene por objeto definir las características técnicas para la ejecución del conjunto turístico "RESILIENCIA". 
+                        <strong>Asimismo</strong>, se establecen las bases para la solicitud de licencias municipales pertinentes.
+                        El diseño busca la mínima huella ecológica; <strong>por tanto</strong>, se opta por un sistema modular de contenedores marítimos reutilizados (High Cube 40') sobre pilotes.
+                    </p>
+
+                    <h3>2. Cimentación y Estructura</h3>
+                    <p>
+                        Debido a la naturaleza costera del terreno, la cimentación no será superficial. 
+                        <strong>Además</strong>, para mitigar el riesgo de inundación y facilitar el drenaje natural, se emplearán pilotes de hormigón armado in situ de 30x30cm, con una profundidad estimada de 4m (a confirmar mediante estudio geotécnico en la fase de ejecución).
+                        La estructura principal de los módulos se anclará a dichos pilotes mediante placas de acero galvanizado con pernos químicos.
+                    </p>
+
+                    <h3>3. Instalaciones (MEP)</h3>
+                    <div class="bg-slate-800 p-4 rounded border-l-4 border-blue-500 my-4">
+                        <h4 class="m-0 text-blue-300">Sostenibilidad Hídrica</h4>
+                        <p class="text-sm m-0 mt-2">
+                            Se proyecta una red separativa de saneamiento. Las aguas grises provenientes de duchas y lavabos serán tratadas in-situ mediante un sistema de fitodepuración (bio-filtro). 
+                            <strong>Asimismo</strong>, el efluente tratado se reutilizará para el riego de las zonas ajardinadas y cubiertas vegetales, reduciendo así el consumo de agua potable.
+                        </p>
+                    </div>
+
+                    <h3>4. Lista de Cantidades Preliminar (BOQ Simplificado)</h3>
+                    <table class="w-full text-sm text-left text-slate-300 mt-4 border border-slate-600">
+                        <thead class="text-xs uppercase bg-slate-800 text-slate-200">
+                            <tr>
+                                <th class="px-6 py-3">Concepto</th>
+                                <th class="px-6 py-3">Unidad</th>
+                                <th class="px-6 py-3">Cantidad Est.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-slate-700">
+                                <td class="px-6 py-4">Contenedores 40' HC (Reacondicionados)</td>
+                                <td class="px-6 py-4">Ud</td>
+                                <td class="px-6 py-4">18</td>
+                            </tr>
+                            <tr class="border-b border-slate-700">
+                                <td class="px-6 py-4">Pilotes Hormigón (30x30x400)</td>
+                                <td class="px-6 py-4">Ud</td>
+                                <td class="px-6 py-4">72</td>
+                            </tr>
+                            <tr class="border-b border-slate-700">
+                                <td class="px-6 py-4">Paneles Solares Fotovoltaicos (450W)</td>
+                                <td class="px-6 py-4">Ud</td>
+                                <td class="px-6 py-4">40</td>
+                            </tr>
+                            <tr class="border-b border-slate-700">
+                                <td class="px-6 py-4">Decking Madera WPC</td>
+                                <td class="px-6 py-4">m²</td>
+                                <td class="px-6 py-4">450</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </article>
+            </section>
+            
+         
+            <section id="view-details" class="hidden w-full h-full p-10 overflow-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                    
+                   
+                    <div class="bg-slate-800 p-4 rounded border border-slate-700 flex flex-col h-96">
+                        <h3 class="text-blue-300 border-b border-slate-600 pb-2 mb-2">DET-01: Anclaje Pilotaje</h3>
+                        <div class="flex-1 bg-slate-900 blueprint-grid relative border border-slate-600">
+                            <svg viewBox="0 0 200 150" class="w-full h-full p-4" id="svg-detail-1" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <pattern id="hatchConcrete" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                        <line x1="0" y1="0" x2="0" y2="4" stroke="#475569" stroke-width="1" />
+                                    </pattern>
+                                    <pattern id="hatchEarth" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                        <line x1="0" y1="0" x2="0" y2="8" stroke="#334155" stroke-width="0.5" />
+                                        <line x1="4" y1="0" x2="4" y2="8" stroke="#334155" stroke-width="0.5" stroke-dasharray="2 2" />
+                                    </pattern>
+                                </defs>
+                             
+                                <rect x="0" y="100" width="200" height="50" class="hatch-earth" />
+                                <line x1="0" y1="100" x2="200" y2="100" stroke="#cbd5e1" stroke-width="1" />
+                              
+                                <rect x="80" y="60" width="40" height="90" class="hatch-concrete" stroke="white" stroke-width="0.5" />
+                               
+                                <rect x="75" y="58" width="50" height="2" fill="#94a3b8" />
+                              
+                                <rect x="75" y="38" width="50" height="20" fill="#1e293b" stroke="#cbd5e1" stroke-width="1" />
+                                <text x="100" y="50" text-anchor="middle" fill="white" font-size="4">ISO CORNER CASTING</text>
+                               
+                                <line x1="125" y1="48" x2="160" y2="48" stroke="#f472b6" stroke-width="0.5" />
+                                <text x="162" y="50" class="detail-text">CONTENEDOR 40' HC</text>
+                                
+                                <line x1="120" y1="100" x2="160" y2="100" stroke="#f472b6" stroke-width="0.5" />
+                                <text x="162" y="102" class="detail-text">NIVEL TERRENO NATURAL</text>
+                                
+                                <line x1="120" y1="80" x2="160" y2="80" stroke="#f472b6" stroke-width="0.5" />
+                                <text x="162" y="82" class="detail-text">PILOTE H.A. 30x30</text>
+                            </svg>
+                        </div>
+                    </div>
+
+               
+                    <div class="bg-slate-800 p-4 rounded border border-slate-700 flex flex-col h-96">
+                        <h3 class="text-blue-300 border-b border-slate-600 pb-2 mb-2">DET-02: Sección Constructiva Muro</h3>
+                        <div class="flex-1 bg-slate-900 blueprint-grid relative border border-slate-600">
+                             <svg viewBox="0 0 200 150" class="w-full h-full p-4" id="svg-detail-2" xmlns="http://www.w3.org/2000/svg">
+                             
+                                <text x="10" y="75" class="detail-text" fill="#94a3b8">EXTERIOR</text>
+                               
+                                <rect x="40" y="10" width="5" height="130" fill="#64748b" stroke="none" /> <!-- Corten Steel -->
+                                <rect x="45" y="10" width="15" height="130" fill="#fef3c7" stroke="none" /> <!-- Spray Insulation -->
+                                <rect x="60" y="10" width="2" height="130" fill="#cbd5e1" stroke="none" /> <!-- Stud -->
+                                <rect x="62" y="10" width="10" height="130" fill="#334155" stroke="none" /> <!-- Air gap/Services -->
+                                <rect x="72" y="10" width="3" height="130" fill="#e2e8f0" stroke="none" /> <!-- Plasterboard -->
+                                
+                          
+                                <text x="90" y="75" class="detail-text" fill="#94a3b8">INTERIOR</text>
+
+                              
+                                <line x1="40" y1="145" x2="75" y2="145" class="dimension-line" />
+                                <text x="57" y="148" class="detail-dim" text-anchor="middle">ESPESOR TOTAL: 120mm</text>
+
+                                
+                                <line x1="35" y1="30" x2="10" y2="30" stroke="#f472b6" stroke-width="0.5" />
+                                <text x="10" y="28" class="detail-text" text-anchor="end">ACERO CORTEN (EXISTENTE)</text>
+
+                                <line x1="52" y1="50" x2="10" y2="50" stroke="#f472b6" stroke-width="0.5" />
+                                <text x="10" y="48" class="detail-text" text-anchor="end">AISLAMIENTO PUR PROYECTADO</text>
+
+                                <line x1="73" y1="70" x2="120" y2="70" stroke="#f472b6" stroke-width="0.5" />
+                                <text x="122" y="72" class="detail-text">ACABADO PYL / MADERA</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+            
+           
+            <section id="view-mep" class="hidden w-full h-full p-10 overflow-auto">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                    
+                 
+                    <div class="bg-slate-800 p-4 rounded border border-slate-700 flex flex-col h-96">
+                        <h3 class="text-yellow-400 border-b border-slate-600 pb-2 mb-2">MEP-E01: Esquema Unifilar Básico</h3>
+                        <div class="flex-1 bg-slate-900 blueprint-grid relative border border-slate-600">
+                             <svg viewBox="0 0 200 150" class="w-full h-full p-4" id="svg-mep-1" xmlns="http://www.w3.org/2000/svg">
+                              
+                                <rect x="20" y="20" width="30" height="20" fill="none" stroke="#fbbf24" stroke-width="1" />
+                                <line x1="20" y1="20" x2="50" y2="40" stroke="#fbbf24" stroke-width="0.5" />
+                                <text x="35" y="15" class="detail-text" text-anchor="middle" fill="#fbbf24">FV SOLAR</text>
+                                
+                             
+                                <rect x="70" y="30" width="20" height="20" fill="#1e293b" stroke="#fbbf24" stroke-width="1" />
+                                <text x="80" y="42" class="detail-text" text-anchor="middle" fill="white">INV</text>
+
+                            
+                                <circle cx="80" cy="10" r="5" fill="none" stroke="#cbd5e1" />
+                                <text x="100" y="12" class="detail-text" fill="#cbd5e1">RED PUBLICA</text>
+
+                             
+                                <rect x="70" y="70" width="20" height="30" fill="none" stroke="#22c55e" stroke-width="1" />
+                                <line x1="72" y1="75" x2="88" y2="75" stroke="#22c55e" />
+                                <line x1="75" y1="80" x2="85" y2="80" stroke="#22c55e" />
+                                <text x="100" y="85" class="detail-text" fill="#22c55e">BATERÍAS LFP</text>
+
+                              
+                                <rect x="130" y="40" width="40" height="60" fill="#334155" stroke="white" />
+                                <text x="150" y="50" class="detail-text" text-anchor="middle" fill="white">CUADRO GRAL</text>
+
+                       
+                                <line x1="50" y1="30" x2="70" y2="35" stroke="#fbbf24" marker-end="url(#arrow)" />
+                                <line x1="80" y1="15" x2="80" y2="30" stroke="#cbd5e1" marker-end="url(#arrow)" />
+                                <line x1="80" y1="50" x2="80" y2="70" stroke="#22c55e" marker-end="url(#arrow)" />
+                                <line x1="90" y1="40" x2="130" y2="60" stroke="white" stroke-width="1" />
+                            </svg>
+                        </div>
+                    </div>
+
+               
+                    <div class="bg-slate-800 p-4 rounded border border-slate-700 flex flex-col h-96">
+                        <h3 class="text-blue-400 border-b border-slate-600 pb-2 mb-2">MEP-P01: Ciclo del Agua</h3>
+                        <div class="flex-1 bg-slate-900 blueprint-grid relative border border-slate-600">
+                             <svg viewBox="0 0 200 150" class="w-full h-full p-4" id="svg-mep-2" xmlns="http://www.w3.org/2000/svg">
+                             
+                                <path d="M 20 20 L 40 20 L 30 10 Z" fill="none" stroke="#60a5fa" />
+                                <text x="30" y="8" class="detail-text" text-anchor="middle" fill="#60a5fa">PLUVIALES</text>
+
+                          
+                                <rect x="20" y="40" width="30" height="40" fill="#1e293b" stroke="#60a5fa" />
+                                <text x="35" y="60" class="detail-text" text-anchor="middle" fill="#60a5fa">ALJIBE</text>
+
+                            
+                                <rect x="90" y="40" width="30" height="30" fill="none" stroke="white" />
+                                <text x="105" y="55" class="detail-text" text-anchor="middle" fill="white">USO (DUCHA)</text>
+
+                          
+                                <circle cx="105" cy="100" r="15" fill="#15803d" opacity="0.5" />
+                                <text x="105" y="105" class="detail-text" text-anchor="middle" fill="#86efac">BIO-FILTRO</text>
+
+                         
+                                <path d="M 160 100 Q 170 80, 180 100" stroke="#22c55e" fill="none" />
+                                <text x="170" y="115" class="detail-text" text-anchor="middle" fill="#22c55e">RIEGO</text>
+
+                             
+                                <line x1="30" y1="20" x2="30" y2="40" stroke="#60a5fa" stroke-dasharray="2 2" />
+                                <line x1="50" y1="50" x2="90" y2="50" stroke="#60a5fa" stroke-width="1" />
+                                <line x1="105" y1="70" x2="105" y2="85" stroke="#94a3b8" />
+                                <line x1="120" y1="100" x2="150" y2="100" stroke="#22c55e" marker-end="url(#arrow)" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+      
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            } else {
+                console.warn('Lucide icons library not loaded yet.');
+            }
+        });
+
+    
+        let currentTab = 'masterplan';
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+          
+            ['masterplan', 'units', 'specs', 'details', 'mep'].forEach(id => {
+                document.getElementById('view-' + id).classList.add('hidden');
+                document.getElementById('btn-' + id).classList.remove('tab-active');
+                document.getElementById('btn-' + id).classList.remove('text-blue-400');
+            });
+            
+         
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('tab-active');
+            
+          
+            const controls = document.getElementById('layer-controls');
+            if(tabId === 'masterplan') controls.style.display = 'block';
+            else controls.style.display = 'none';
+        }
+
+    
+        function toggleLayer(layerId) {
+            const layer = document.getElementById(layerId);
+            if (layer.style.display === 'none') {
+                layer.style.display = 'block';
+            } else {
+                layer.style.display = 'none';
+            }
+        }
+
+      
+        function downloadActiveView() {
+            let svgId = "";
+            let filename = "plano_resiliencia.svg";
+
+            if (currentTab === 'masterplan') {
+                svgId = 'svg-masterplan';
+                filename = 'RESILIENCIA_Masterplan_Site.svg';
+            } else if (currentTab === 'units') {
+               
+                svgId = 'svg-unit-1'; 
+                filename = 'RESILIENCIA_Unidad_Tipo.svg';
+            } else if (currentTab === 'details') {
+                svgId = 'svg-detail-1';
+                filename = 'RESILIENCIA_Detalle_Cimentacion.svg';
+            } else if (currentTab === 'mep') {
+                svgId = 'svg-mep-1';
+                filename = 'RESILIENCIA_Esquema_MEP.svg';
+            } else {
+                alert("Esta vista no contiene planos vectoriales descargables. Pruebe 'Imprimir PDF'.");
+                return;
+            }
+
+            const svgElement = document.getElementById(svgId);
+            if (svgElement) {
+                const serializer = new XMLSerializer();
+                let source = serializer.serializeToString(svgElement);
+                
+               
+                if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+                    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+                }
+                
+            
+                source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+
+                const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+                
+                const downloadLink = document.createElement("a");
+                downloadLink.href = url;
+                downloadLink.download = filename;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }
+        }
+    </script>
+</body>
+</html>
